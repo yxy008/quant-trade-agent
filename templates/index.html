@@ -1,0 +1,1825 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 股票分析智能体</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- 全屏登录页面 -->
+    <div class="auth-fullscreen" id="authFullscreen">
+        <div class="auth-container">
+            <div class="auth-header">
+                <div class="auth-logo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                </div>
+                <h1 class="auth-title">量化交易系统</h1>
+                <p class="auth-subtitle">A股智能量化分析平台</p>
+            </div>
+            <div class="auth-card">
+                <h2 class="auth-card-title" id="authCardTitle">登录</h2>
+                <div class="auth-form">
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <input type="text" id="authUsername" placeholder="请输入用户名" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label>密码</label>
+                        <input type="password" id="authPassword" placeholder="请输入密码">
+                    </div>
+                    <div class="form-group" id="authEmailGroup" style="display:none;">
+                        <label>邮箱（选填）</label>
+                        <input type="email" id="authEmail" placeholder="请输入邮箱">
+                    </div>
+                    <div class="auth-error" id="authError" style="display:none;"></div>
+                    <button class="btn-primary auth-submit-btn" id="authSubmitBtn" onclick="doAuthLogin()">登录</button>
+                    <div class="auth-switch">
+                        <span id="authSwitchText">还没有账号？</span>
+                        <a href="javascript:void(0)" id="authSwitchLink" onclick="toggleAuthMode()">立即注册</a>
+                    </div>
+                </div>
+            </div>
+            <div class="auth-footer">
+                <span>仅供学习研究使用，不构成投资建议</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container" id="appContainer" style="display:none;">
+        <!-- 市场状态横幅 -->
+        <div class="market-status-bar" id="marketStatusBar" style="display:none;">
+            <span class="market-status-icon" id="marketStatusIcon"></span>
+            <span class="market-status-text" id="marketStatusText"></span>
+            <span class="market-status-extra" id="marketStatusExtra"></span>
+        </div>
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-title">StockAI</span>
+                    <span class="logo-subtitle">智能分析助手</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <a class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    <span>仪表盘</span>
+                </a>
+
+                <div class="nav-group">
+                    <div class="nav-group-title" onclick="toggleNavGroup(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                        <span>选股分析</span>
+                        <svg class="nav-group-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                    <div class="nav-group-items">
+                        <a class="nav-item" data-page="analysis" onclick="switchPage('analysis')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+                            <span>股票分析</span>
+                        </a>
+                        <a class="nav-item" data-page="pool" onclick="switchPage('pool')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                            <span>股票池</span>
+                        </a>
+                        <a class="nav-item" data-page="compare" onclick="switchPage('compare')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                            <span>股票对比</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title" onclick="toggleNavGroup(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="8" y1="21" x2="8" y2="13"/><line x1="16" y1="21" x2="16" y2="5"/></svg>
+                        <span>市场数据</span>
+                        <svg class="nav-group-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                    <div class="nav-group-items">
+                        <a class="nav-item" data-page="news" onclick="switchPage('news')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
+                            <span>市场资讯</span>
+                        </a>
+                        <a class="nav-item" data-page="funds" onclick="switchPage('funds')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            <span>资金流向</span>
+                        </a>
+                        <a class="nav-item" data-page="breadth" onclick="switchPage('breadth')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="8" y1="21" x2="8" y2="13"/><line x1="16" y1="21" x2="16" y2="5"/></svg>
+                            <span>市场宽度</span>
+                        </a>
+                        <a class="nav-item" data-page="kline" onclick="switchPage('kline')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                            <span>K线图表</span>
+                        </a>
+                        <a class="nav-item" data-page="attribution" onclick="switchPage('attribution')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+                            <span>绩效归因</span>
+                        </a>
+                        <a class="nav-item" data-page="sentiment" onclick="switchPage('sentiment')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                            <span>市场情绪</span>
+                        </a>
+                        <a class="nav-item" data-page="risk-monitor" onclick="switchPage('risk-monitor')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            <span>风控监控</span>
+                        </a>
+                        
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title" onclick="toggleNavGroup(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                        <span>策略回测</span>
+                        <svg class="nav-group-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                    <div class="nav-group-items">
+                        <a class="nav-item" data-page="backtest" onclick="switchPage('backtest')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                            <span>策略回测</span>
+                        </a>
+                        <a class="nav-item" data-page="rotation" onclick="switchPage('rotation')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                            <span>行业轮动</span>
+                        </a>
+                        <a class="nav-item" data-page="paper-trading" onclick="switchPage('paper-trading')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="6" y1="8" x2="18" y2="8"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="16" x2="12" y2="16"/></svg>
+                            <span>模拟交易</span>
+                        </a>
+                        <a class="nav-item" data-page="notify" onclick="switchPage('notify')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                            <span>通知设置</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title" onclick="toggleNavGroup(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <span>风险管理</span>
+                        <svg class="nav-group-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                    <div class="nav-group-items">
+                        <a class="nav-item" data-page="risk" onclick="switchPage('risk')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            <span>风险评估</span>
+                        </a>
+                        <a class="nav-item" data-page="monte-carlo" onclick="switchPage('monte-carlo')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                            <span>蒙特卡洛</span>
+                        </a>
+                        <a class="nav-item" data-page="position" onclick="switchPage('position')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+                            <span>仓位管理</span>
+                        </a>
+                        
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title" onclick="toggleNavGroup(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+                        <span>持仓交易</span>
+                        <svg class="nav-group-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                    <div class="nav-group-items">
+                        <a class="nav-item" data-page="portfolio" onclick="switchPage('portfolio')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                            <span>我的持仓</span>
+                        </a>
+                        <a class="nav-item" data-page="monitor" onclick="switchPage('monitor')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                            <span>实时监控</span>
+                        </a>
+                        
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title" onclick="toggleNavGroup(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/><line x1="12" y1="22" x2="12" y2="15.5"/></svg>
+                        <span>智能工具</span>
+                        <svg class="nav-group-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                    <div class="nav-group-items">
+                        <a class="nav-item" data-page="multi-factor" onclick="switchPage('multi-factor')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="12" y2="16"/></svg>
+                            <span>多因子选股</span>
+                        </a>
+                        <a class="nav-item" data-page="ai" onclick="switchPage('ai')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            <span>AI 助手</span>
+                        </a>
+                        <a class="nav-item" data-page="scheduler" onclick="switchPage('scheduler')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span>定时任务</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-group-title" onclick="toggleNavGroup(this)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        <span>系统设置</span>
+                        <svg class="nav-group-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                    <div class="nav-group-items">
+                        <a class="nav-item" data-page="settings" onclick="switchPage('settings')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                            <span>全局配置</span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="sidebar-user" id="sidebarUser">
+                    <button class="btn-secondary btn-sm" onclick="showLoginModal()" style="width:100%;">登录 / 注册</button>
+                </div>
+                <div class="market-status" id="marketStatus">
+                    <span class="status-dot"></span>
+                    <span class="status-text">加载中...</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 登录弹窗 -->
+        <div class="modal-overlay" id="loginModal" style="display:none;">
+            <div class="modal-content" style="max-width:400px;">
+                <div class="modal-header">
+                    <h3 id="loginModalTitle">登录</h3>
+                    <button class="modal-close" onclick="closeLoginModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="loginForm">
+                        <div class="form-group">
+                            <label>用户名</label>
+                            <input type="text" id="loginUsername" placeholder="请输入用户名">
+                        </div>
+                        <div class="form-group">
+                            <label>密码</label>
+                            <input type="password" id="loginPassword" placeholder="请输入密码">
+                        </div>
+                        <div class="form-group" id="registerEmailGroup" style="display:none;">
+                            <label>邮箱（选填）</label>
+                            <input type="email" id="registerEmail" placeholder="请输入邮箱">
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn-primary" onclick="doLogin()" id="loginSubmitBtn">登录</button>
+                            <button class="btn-secondary" onclick="toggleLoginRegister()" id="toggleRegBtn">没有账号？去注册</button>
+                        </div>
+                        <div id="loginError" style="color:#ef5350;font-size:13px;margin-top:8px;display:none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主内容区 -->
+        <main class="main-content" id="page-container">
+            <!-- 仪表盘页面 -->
+            <section class="page active" id="page-dashboard">
+                <div class="page-header">
+                    <h1>市场仪表盘</h1>
+                    <p class="page-desc">实时市场概览与趋势分析</p>
+                </div>
+                <div class="dashboard-grid">
+                    <!-- 大盘趋势卡片 -->
+                    <div class="card card-trend">
+                        <div class="card-header">
+                            <h3>大盘趋势</h3>
+                            <span class="card-badge" id="trendBadge">--</span>
+                        </div>
+                        <div class="card-body" id="trendContent">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                    <!-- 指数详情 -->
+                    <div class="card card-index">
+                        <div class="card-header"><h3>上证指数</h3></div>
+                        <div class="card-body" id="shIndexContent">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                    <div class="card card-index">
+                        <div class="card-header"><h3>深证成指</h3></div>
+                        <div class="card-body" id="szIndexContent">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                    <!-- 板块概览 -->
+                    <div class="card card-sectors">
+                        <div class="card-header">
+                            <h3>板块概览</h3>
+                            <button class="btn-sm" onclick="switchPage('pool')">查看全部</button>
+                        </div>
+                        <div class="card-body" id="sectorsOverview">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                    <!-- 热门推荐 -->
+                    <div class="card card-hot">
+                        <div class="card-header"><h3>热门推荐</h3></div>
+                        <div class="card-body" id="hotStocks">
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 股票分析页面 -->
+            <section class="page" id="page-analysis">
+                <div class="page-header">
+                    <h1>股票分析</h1>
+                    <p class="page-desc">输入股票代码，获取综合评分与财务数据</p>
+                </div>
+                <div class="search-bar">
+                    <input type="text" id="stockSearch" placeholder="输入6位股票代码，如 600519" maxlength="6" autocomplete="off">
+                    <button class="btn-primary" onclick="analyzeStock()">开始分析</button>
+                </div>
+                <div class="quick-stocks">
+                    <span>快速选择：</span>
+                    <button class="tag" onclick="quickAnalyze('600519')">贵州茅台</button>
+                    <button class="tag" onclick="quickAnalyze('000001')">平安银行</button>
+                    <button class="tag" onclick="quickAnalyze('002594')">比亚迪</button>
+                    <button class="tag" onclick="quickAnalyze('300750')">宁德时代</button>
+                    <button class="tag" onclick="quickAnalyze('600036')">招商银行</button>
+                </div>
+                <div id="analysisResult" class="analysis-result"></div>
+            </section>
+
+            <!-- 股票池页面 -->
+            <section class="page" id="page-pool">
+                <div class="page-header">
+                    <h1>候选股票池</h1>
+                    <p class="page-desc">按板块浏览优质候选股票，支持多选筛选</p>
+                </div>
+                <div class="pool-controls">
+                    <button class="btn-primary" onclick="loadPool()">刷新数据</button>
+                    <div class="multi-select-wrapper" id="poolSectorSelect">
+                        <div class="multi-select-trigger" onclick="toggleSectorDropdown()">
+                            <span class="multi-select-text" id="poolSectorText">全部板块</span>
+                            <svg class="multi-select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
+                        <div class="multi-select-dropdown" id="poolSectorDropdown" style="display:none;">
+                            <div class="multi-select-actions">
+                                <a href="javascript:void(0)" onclick="selectAllSectors()">全选</a>
+                                <a href="javascript:void(0)" onclick="deselectAllSectors()">取消全选</a>
+                            </div>
+                            <div class="multi-select-options" id="poolSectorOptions">
+                                <div class="loading-text">加载中...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="poolResult" class="pool-result">
+                    <div class="loading-spinner"></div>
+                </div>
+            </section>
+
+            <!-- 仓位管理页面 -->
+            <section class="page" id="page-position">
+                <div class="page-header">
+                    <h1>仓位管理</h1>
+                    <p class="page-desc">根据评分智能分配资金</p>
+                </div>
+                <div class="position-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>总资金（元）</label>
+                            <input type="number" id="posCapital" value="100000" min="10000" step="10000">
+                        </div>
+                        <div class="form-group">
+                            <label>风险等级</label>
+                            <select id="posRisk">
+                                <option value="low">低风险（保守）</option>
+                                <option value="medium" selected>中风险（平衡）</option>
+                                <option value="high">高风险（激进）</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>股票代码（逗号分隔）</label>
+                        <input type="text" id="posSymbols" placeholder="如：600519,000001,002594,300750" value="600519,000001,002594,300750,600036">
+                    </div>
+                    <button class="btn-primary" onclick="calculatePosition()">计算仓位</button>
+                </div>
+                <div id="positionResult" class="position-result"></div>
+            </section>
+
+            <!-- 市场资讯页面 -->
+            <section class="page" id="page-news">
+                <div class="page-header">
+                    <h1>市场资讯</h1>
+                    <p class="page-desc">最新财经新闻与市场动态</p>
+                </div>
+                <button class="btn-primary" onclick="loadNews()" style="margin-bottom:20px;">刷新资讯</button>
+                <div id="newsResult" class="news-result">
+                    <div class="loading-spinner"></div>
+                </div>
+            </section>
+
+            <!-- 我的持仓页面 -->
+            <section class="page" id="page-portfolio">
+                <div class="page-header">
+                    <h1>我的持仓</h1>
+                    <p class="page-desc">管理您的持仓股票，查看盈亏与分析建议</p>
+                </div>
+
+                <!-- 添加持仓表单 -->
+                <div class="portfolio-add-section">
+                    <h3>添加持仓</h3>
+                    <div class="portfolio-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>股票代码</label>
+                                <input type="text" id="pfSymbol" placeholder="6位代码，如 600519" maxlength="6">
+                            </div>
+                            <div class="form-group">
+                                <label>购买日期</label>
+                                <input type="date" id="pfDate">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>购买单价（元）</label>
+                                <input type="number" id="pfPrice" placeholder="如 1680.00" step="0.01" min="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label>购买手数（1手=100股）</label>
+                                <input type="number" id="pfLots" placeholder="如 2" step="1" min="1">
+                            </div>
+                        </div>
+                        <button class="btn-primary" onclick="addPortfolio()">添加持仓</button>
+                    </div>
+                </div>
+
+                <!-- 持仓列表 -->
+                <div class="portfolio-list-section">
+                    <div class="portfolio-list-header">
+                        <h3>持仓列表</h3>
+                        <div>
+                            <button class="btn-sm" onclick="loadPortfolio()">刷新行情</button>
+                            <button class="btn-primary" onclick="analyzePortfolio()" style="margin-left:8px;">分析持仓</button>
+                        </div>
+                    </div>
+                    <div id="portfolioList" class="portfolio-list-content">
+                        <div class="loading-text">点击刷新行情加载数据</div>
+                    </div>
+                </div>
+
+                <!-- 持仓分析结果 -->
+                <div id="portfolioAnalysis" class="portfolio-analysis-section"></div>
+            </section>
+
+            <!-- 资金流向页面 -->
+            <section class="page" id="page-funds">
+                <div class="page-header">
+                    <h1>资金流向</h1>
+                    <p class="page-desc">北向资金、行业资金流向与市场总览</p>
+                </div>
+                <div class="funds-tabs">
+                    <button class="tab-btn active" onclick="switchFundsTab('northbound')">北向资金</button>
+                    <button class="tab-btn" onclick="switchFundsTab('industry')">行业资金</button>
+                    <button class="tab-btn" onclick="switchFundsTab('overview')">市场总览</button>
+                </div>
+                <div id="fundsDatePicker" class="funds-date-picker" style="display:none;padding:12px 16px;text-align:right;background:var(--bg-secondary);border-radius:var(--radius-sm);margin-bottom:12px;">
+                    <label style="margin-right:10px;color:var(--text-secondary);font-size:14px;font-weight:500;">选择日期:</label>
+                    <input type="date" id="fundsOverviewDate" onchange="onFundsDateChange()" style="padding:8px 14px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-primary);color:var(--text-primary);font-size:14px;width:180px;">
+                    <button class="btn-text" onclick="clearFundsDate()" style="margin-left:10px;padding:8px 16px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;font-size:13px;">清除</button>
+                    <span id="fundsDateStatus" style="margin-left:12px;font-size:13px;"></span>
+                </div>
+                <div id="fundsResult" class="funds-result">
+                    <div class="loading-spinner"></div>
+                </div>
+            </section>
+
+            <!-- 市场宽度页面 -->
+            <section class="page" id="page-breadth">
+                <div class="page-header">
+                    <h1>市场宽度</h1>
+                    <p class="page-desc">涨跌分布、市场情绪与板块宽度</p>
+                </div>
+                <div class="breadth-date-picker" style="padding:12px 16px;text-align:right;background:var(--bg-secondary);border-radius:var(--radius-sm);margin-bottom:12px;">
+                    <label style="margin-right:10px;color:var(--text-secondary);font-size:14px;font-weight:500;">选择日期:</label>
+                    <input type="date" id="breadthDate" onchange="onBreadthDateChange()" style="padding:8px 14px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-primary);color:var(--text-primary);font-size:14px;width:180px;">
+                    <button class="btn-text" onclick="clearBreadthDate()" style="margin-left:10px;padding:8px 16px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;font-size:13px;">清除</button>
+                    <span id="breadthDateStatus" style="margin-left:12px;font-size:13px;"></span>
+                </div>
+                <div class="breadth-grid">
+                    <div class="breadth-card" id="breadthMarket">
+                        <h3>市场涨跌统计</h3>
+                        <div class="loading-spinner"></div>
+                    </div>
+                    <div class="breadth-card" id="breadthSector">
+                        <h3>板块宽度</h3>
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 股票对比页面 -->
+            <section class="page" id="page-compare">
+                <div class="page-header">
+                    <h1>股票对比</h1>
+                    <p class="page-desc">多只股票横向对比分析</p>
+                </div>
+                <div class="compare-input">
+                    <input type="text" id="compareSymbols" placeholder="输入股票代码，逗号分隔，如 600519,000858,000568">
+                    <button class="btn-primary" onclick="compareStocks()">开始对比</button>
+                </div>
+                <div id="compareResult" class="compare-result"></div>
+            </section>
+
+            <!-- 风险分析页面 -->
+            <section class="page" id="page-risk">
+                <div class="page-header">
+                    <h1>风险分析</h1>
+                    <p class="page-desc">波动率、最大回撤、夏普比率、Beta等风险指标</p>
+                </div>
+                <div class="risk-input">
+                    <input type="text" id="riskSymbol" placeholder="输入股票代码，如 600519">
+                    <button class="btn-primary" onclick="analyzeRisk()">分析风险</button>
+                </div>
+                <div id="riskResult" class="risk-result"></div>
+            </section>
+
+            <!-- K线图表页面 -->
+            <section class="page" id="page-kline">
+                <div class="page-header">
+                    <h1>K线图表</h1>
+                    <p class="page-desc">交互式K线图，支持缩放与拖拽，叠加均线/布林带</p>
+                </div>
+                <div class="kline-toolbar">
+                    <div class="kline-input-group">
+                        <input type="text" id="klineSymbol" placeholder="股票代码，如 600519" value="600519">
+                        <select id="klinePeriod">
+                            <option value="1">近1天</option>
+                            <option value="3">近3天</option>
+                            <option value="5">近5天</option>
+                            <option value="7">近7天</option>
+                            <option value="15">近15天</option>
+                            <option value="30">近30天</option>
+                            <option value="60">近60天</option>
+                            <option value="120">近120天</option>
+                            <option value="250" selected>近250天</option>
+                            <option value="500">近500天</option>
+                            <option value="custom">自定义范围</option>
+                        </select>
+                        <span id="klineCustomRange" style="display:none;">
+                            <input type="date" id="klineStartDate" style="padding:6px 8px;border:1px solid var(--border-color);border-radius:var(--radius-sm);background:var(--bg-secondary);color:var(--text-primary);width:130px;">
+                            <span style="margin:0 4px;color:var(--text-muted);">至</span>
+                            <input type="date" id="klineEndDate" style="padding:6px 8px;border:1px solid var(--border-color);border-radius:var(--radius-sm);background:var(--bg-secondary);color:var(--text-primary);width:130px;">
+                        </span>
+                        <button class="btn-primary" onclick="loadKlineChart()">加载图表</button>
+                    </div>
+                    <div class="kline-indicators">
+                        <label class="kline-check"><input type="checkbox" id="klineShowMA" checked onchange="renderKlineChart()"> 均线(MA)</label>
+                        <label class="kline-check"><input type="checkbox" id="klineShowBoll" onchange="renderKlineChart()"> 布林带</label>
+                        <label class="kline-check"><input type="checkbox" id="klineShowVolume" checked onchange="renderKlineChart()"> 成交量</label>
+                        <span class="kline-separator">|</span>
+                        <button class="btn-sm kline-zoom-btn" onclick="klineZoomIn()" title="放大">+</button>
+                        <button class="btn-sm kline-zoom-btn" onclick="klineZoomOut()" title="缩小">-</button>
+                        <button class="btn-sm kline-zoom-btn" onclick="klineZoomReset()" title="重置">重置</button>
+                    </div>
+                </div>
+                <div class="kline-chart-container">
+                    <canvas id="klineCanvas"></canvas>
+                    <div class="kline-tooltip" id="klineTooltip"></div>
+                </div>
+                <div class="kline-legend" id="klineLegend"></div>
+            </section>
+
+            <!-- 策略回测页面 -->
+            <section class="page" id="page-backtest">
+                <div class="page-header">
+                    <h1>策略回测</h1>
+                    <p class="page-desc">选择策略，配置参数，验证历史表现</p>
+                </div>
+
+                <!-- 回测配置区 -->
+                <div class="backtest-config">
+                    <div class="config-left">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>股票代码</label>
+                                <input type="text" id="btSymbol" placeholder="如 600519" maxlength="6" value="000001">
+                            </div>
+                            <div class="form-group">
+                                <label>初始资金（元）</label>
+                                <input type="number" id="btCapital" value="100000" min="10000" step="10000">
+                            </div>
+                            <div class="form-group">
+                                <label>回测天数</label>
+                                <select id="btDays">
+                                    <option value="120">120天（半年）</option>
+                                    <option value="250" selected>250天（一年）</option>
+                                    <option value="500">500天（两年）</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>仓位比例</label>
+                                <select id="btPositionSize">
+                                    <option value="0.3">30%（轻仓）</option>
+                                    <option value="0.5">50%（半仓）</option>
+                                    <option value="0.8">80%（重仓）</option>
+                                    <option value="1.0" selected>100%（满仓）</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>佣金费率</label>
+                                <select id="btCommission">
+                                    <option value="0.0002">万二</option>
+                                    <option value="0.0003" selected>万三（默认）</option>
+                                    <option value="0.0005">万五</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>滑点</label>
+                                <select id="btSlippage">
+                                    <option value="0.0005">0.05%</option>
+                                    <option value="0.001" selected>0.1%（默认）</option>
+                                    <option value="0.002">0.2%</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+                                <label style="margin-bottom:0;">允许做空</label>
+                                <input type="checkbox" id="btAllowShort" style="width:18px;height:18px;cursor:pointer;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="config-right">
+                        <div class="form-group">
+                            <label>选择策略</label>
+                            <select id="btStrategy" onchange="onStrategyChange()">
+                                <option value="">加载中...</option>
+                            </select>
+                        </div>
+                        <div id="btStrategyParams" class="strategy-params">
+                            <p class="text-muted">请选择策略后配置参数</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="backtest-actions">
+                    <button class="btn-primary btn-lg" onclick="runBacktest()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        开始回测
+                    </button>
+                    <button class="btn-secondary btn-lg" onclick="compareStrategies()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                        策略对比
+                    </button>
+                    <div class="quick-bt-stocks">
+                        <span>快速选择：</span>
+                        <button class="tag" onclick="setBtSymbol('600519')">贵州茅台</button>
+                        <button class="tag" onclick="setBtSymbol('000001')">平安银行</button>
+                        <button class="tag" onclick="setBtSymbol('002594')">比亚迪</button>
+                        <button class="tag" onclick="setBtSymbol('300750')">宁德时代</button>
+                        <button class="tag" onclick="setBtSymbol('600036')">招商银行</button>
+                    </div>
+                </div>
+
+                <!-- 回测结果区 -->
+                <div id="backtestResult" class="backtest-result">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="color:var(--text-muted);margin-bottom:16px;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                        <p>配置策略参数后，点击"开始回测"查看结果</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 因子库页面 -->
+            <!-- 多因子选股页面 -->
+            <section class="page" id="page-multi-factor">
+                <div class="page-header">
+                    <h1>多因子选股</h1>
+                    <p class="page-desc">基于多因子模型进行股票评分与排名，支持等权/IC加权/IC-IR加权/因子择时</p>
+                </div>
+                <div class="multi-factor-config">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>股票代码列表（逗号分隔）</label>
+                            <input type="text" id="mfSymbols" placeholder="如 600519,000858,002594,300750,601318" style="width:400px;">
+                        </div>
+                        <div class="form-group">
+                            <label>合成方法</label>
+                            <select id="mfMethod">
+                                <option value="equal_weight">等权合成</option>
+                                <option value="ic_weighted">IC加权</option>
+                                <option value="icir_weighted">IC-IR加权</option>
+                                <option value="timing">因子择时</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>标准化方法</label>
+                            <select id="mfNormalize">
+                                <option value="rank">Rank排名</option>
+                                <option value="zscore">Z-Score</option>
+                                <option value="minmax">Min-Max</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>选取数量</label>
+                            <select id="mfTopN">
+                                <option value="5">前5</option>
+                                <option value="10">前10</option>
+                                <option value="20" selected>前20</option>
+                                <option value="30">前30</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="align-self:flex-end;">
+                            <button class="btn-primary" onclick="runMultiFactor()">开始选股</button>
+                        </div>
+                    </div>
+                    <div class="quick-bt-stocks">
+                        <span>快速选择：</span>
+                        <button class="tag" onclick="document.getElementById('mfSymbols').value='600519,000858,002594,300750,601318,000001,600036,601012,002415,300059,600276,000333,601888,600809,002475,300124,600030,000725,601398,600900';runMultiFactor()">沪深20只</button>
+                        <button class="tag" onclick="document.getElementById('mfSymbols').value='600519,000858,002594,300750,601318';runMultiFactor()">核心5只</button>
+                    </div>
+                </div>
+                <div id="mfResult" class="multi-factor-result">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="color:var(--text-muted);margin-bottom:16px;"><rect x="2" y="2" width="20" height="20" rx="2"/><line x1="7" y1="8" x2="17" y2="8"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="7" y1="16" x2="12" y2="16"/></svg>
+                        <p>输入股票代码列表，选择合成方法，点击"开始选股"查看排名结果</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 行业轮动页面 -->
+            <section class="page" id="page-rotation">
+                <div class="page-header">
+                    <h1>行业轮动策略</h1>
+                    <p class="page-desc">基于行业动量与相对强弱分析，捕捉行业轮动机会</p>
+                </div>
+                <div class="rotation-tabs">
+                    <button class="monitor-tab active" onclick="switchRotationTab('analyze')">轮动分析</button>
+                    <button class="monitor-tab" onclick="switchRotationTab('backtest')">策略回测</button>
+                </div>
+                <div class="monitor-tab-content active" id="rotTab-analyze">
+                    <div class="form-row" style="margin-bottom:16px;">
+                        <div class="form-group">
+                            <label>数据天数</label>
+                            <select id="rotDays">
+                                <option value="120">120天</option>
+                                <option value="250" selected>250天</option>
+                                <option value="500">500天</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>推荐行业数</label>
+                            <select id="rotTopN">
+                                <option value="3">前3</option>
+                                <option value="5" selected>前5</option>
+                                <option value="10">前10</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="align-self:flex-end;">
+                            <button class="btn-primary" onclick="runRotationAnalyze()">开始分析</button>
+                        </div>
+                    </div>
+                    <div id="rotAnalyzeResult" class="rotation-result">
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="color:var(--text-muted);margin-bottom:16px;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                            <p>点击"开始分析"查看行业轮动分析结果</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="monitor-tab-content" id="rotTab-backtest">
+                    <div class="form-row" style="margin-bottom:16px;">
+                        <div class="form-group">
+                            <label>数据天数</label>
+                            <select id="rotBtDays">
+                                <option value="250">250天</option>
+                                <option value="500" selected>500天</option>
+                                <option value="1000">1000天</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>持仓行业数</label>
+                            <select id="rotBtTopN">
+                                <option value="2">2个</option>
+                                <option value="3" selected>3个</option>
+                                <option value="5">5个</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>调仓频率</label>
+                            <select id="rotBtRebalance">
+                                <option value="5">每5天</option>
+                                <option value="10">每10天</option>
+                                <option value="20" selected>每20天</option>
+                                <option value="60">每60天</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>初始资金</label>
+                            <input type="number" id="rotBtCapital" value="100000" min="10000" step="10000" style="width:120px;">
+                        </div>
+                        <div class="form-group" style="align-self:flex-end;">
+                            <button class="btn-primary" onclick="runRotationBacktest()">开始回测</button>
+                        </div>
+                    </div>
+                    <div id="rotBacktestResult" class="rotation-result">
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="color:var(--text-muted);margin-bottom:16px;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                            <p>设置参数后点击"开始回测"查看行业轮动策略回测结果</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 模拟交易页面 -->
+            <section class="page" id="page-paper-trading">
+                <div class="page-header">
+                    <h1>模拟交易</h1>
+                    <p class="page-desc">虚拟资金模拟真实交易，验证策略实战效果</p>
+                </div>
+                <div class="paper-trading-container">
+                    <div class="paper-account-bar" id="paperAccountBar">
+                        <div class="form-row" style="margin-bottom:16px;align-items:flex-end;">
+                            <div class="form-group">
+                                <label>初始资金</label>
+                                <input type="number" id="ptCapital" value="100000" min="10000" step="10000" style="width:140px;">
+                            </div>
+                            <div class="form-group">
+                                <label>账户名称</label>
+                                <input type="text" id="ptAccountName" value="默认账户" style="width:160px;">
+                            </div>
+                            <div class="form-group" style="align-self:flex-end;">
+                                <button class="btn-primary" onclick="initPaperTrading()">创建/加载账户</button>
+                            </div>
+                        </div>
+                        <div id="ptAccountSummary" class="paper-summary-cards" style="display:none;"></div>
+                    </div>
+
+                    <div class="paper-tabs" style="margin-top:20px;">
+                        <button class="monitor-tab active" onclick="switchPaperTab('order')">下单</button>
+                        <button class="monitor-tab" onclick="switchPaperTab('positions')">持仓</button>
+                        <button class="monitor-tab" onclick="switchPaperTab('orders')">订单</button>
+                        <button class="monitor-tab" onclick="switchPaperTab('trades')">成交</button>
+                    </div>
+
+                    <div class="monitor-tab-content active" id="ptTab-order">
+                        <div class="form-row" style="margin-bottom:16px;align-items:flex-end;">
+                            <div class="form-group">
+                                <label>股票代码</label>
+                                <input type="text" id="ptSymbol" placeholder="如 600519" style="width:120px;">
+                            </div>
+                            <div class="form-group">
+                                <label>买卖方向</label>
+                                <select id="ptDirection" style="width:100px;">
+                                    <option value="buy">买入</option>
+                                    <option value="sell">卖出</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>数量（股）</label>
+                                <input type="number" id="ptQuantity" value="100" min="100" step="100" style="width:120px;">
+                            </div>
+                            <div class="form-group">
+                                <label>订单类型</label>
+                                <select id="ptOrderType" style="width:100px;">
+                                    <option value="market">市价单</option>
+                                    <option value="limit">限价单</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="ptLimitPriceGroup" style="display:none;">
+                                <label>限价</label>
+                                <input type="number" id="ptLimitPrice" step="0.01" style="width:100px;">
+                            </div>
+                            <div class="form-group" style="align-self:flex-end;">
+                                <button class="btn-primary" onclick="placePaperOrder()">下单</button>
+                            </div>
+                        </div>
+                        <div id="ptOrderResult"></div>
+                    </div>
+
+                    <div class="monitor-tab-content" id="ptTab-positions">
+                        <div style="margin-bottom:12px;">
+                            <button class="btn-secondary" onclick="refreshPaperPositions()">刷新持仓</button>
+                        </div>
+                        <div id="ptPositionsResult"></div>
+                    </div>
+
+                    <div class="monitor-tab-content" id="ptTab-orders">
+                        <div id="ptOrdersResult"></div>
+                    </div>
+
+                    <div class="monitor-tab-content" id="ptTab-trades">
+                        <div id="ptTradesResult"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 通知设置页面 -->
+            <section class="page" id="page-notify">
+                <div class="page-header">
+                    <h1>通知设置</h1>
+                    <p class="page-desc">配置策略信号推送通知，支持邮件和钉钉机器人</p>
+                </div>
+                <div class="notify-container" style="max-width:900px;">
+                    <div class="notify-tabs" style="margin-bottom:20px;">
+                        <button class="monitor-tab active" onclick="switchNotifyTab('email')">邮件配置</button>
+                        <button class="monitor-tab" onclick="switchNotifyTab('dingtalk')">钉钉配置</button>
+                        <button class="monitor-tab" onclick="switchNotifyTab('rules')">通知规则</button>
+                    </div>
+
+                    <div class="monitor-tab-content active" id="notifyTab-email">
+                        <div class="result-card">
+                            <h4>邮件服务器配置</h4>
+                            <div class="form-row" style="margin-top:12px;">
+                                <div class="form-group">
+                                    <label>启用邮件通知</label>
+                                    <input type="checkbox" id="nfEmailEnabled" onchange="saveNotifyConfig('email', 'enabled', this.checked)">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group" style="flex:2;">
+                                    <label>SMTP服务器地址</label>
+                                    <input type="text" id="nfSmtpHost" placeholder="如 smtp.qq.com" onchange="saveNotifyConfig('email', 'smtp_host', this.value)">
+                                </div>
+                                <div class="form-group">
+                                    <label>端口</label>
+                                    <input type="number" id="nfSmtpPort" value="465" onchange="saveNotifyConfig('email', 'smtp_port', parseInt(this.value))">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>发件邮箱</label>
+                                    <input type="email" id="nfSender" placeholder="如 your@qq.com" onchange="saveNotifyConfig('email', 'sender', this.value)">
+                                </div>
+                                <div class="form-group">
+                                    <label>邮箱密码/授权码</label>
+                                    <input type="password" id="nfPassword" placeholder="SMTP授权码" onchange="saveNotifyConfig('email', 'password', this.value)">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>收件邮箱（多个用逗号分隔）</label>
+                                <input type="text" id="nfReceivers" placeholder="如 user1@qq.com, user2@qq.com" onchange="saveNotifyConfig('email', 'receivers', this.value.split(',').map(function(s){return s.trim();}))">
+                            </div>
+                            <button class="btn-secondary" onclick="testNotify('email')" style="margin-top:12px;">发送测试邮件</button>
+                        </div>
+                    </div>
+
+                    <div class="monitor-tab-content" id="notifyTab-dingtalk">
+                        <div class="result-card">
+                            <h4>钉钉机器人配置</h4>
+                            <div class="form-row" style="margin-top:12px;">
+                                <div class="form-group">
+                                    <label>启用钉钉通知</label>
+                                    <input type="checkbox" id="nfDtEnabled" onchange="saveNotifyConfig('dingtalk', 'enabled', this.checked)">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Webhook地址</label>
+                                <input type="text" id="nfWebhookUrl" placeholder="https://oapi.dingtalk.com/robot/send?access_token=xxx" onchange="saveNotifyConfig('dingtalk', 'webhook_url', this.value)">
+                            </div>
+                            <div class="form-group">
+                                <label>加签密钥（可选）</label>
+                                <input type="text" id="nfDtSecret" placeholder="SEC开头密钥" onchange="saveNotifyConfig('dingtalk', 'secret', this.value)">
+                            </div>
+                            <button class="btn-secondary" onclick="testNotify('dingtalk')" style="margin-top:12px;">发送测试消息</button>
+                        </div>
+                    </div>
+
+                    <div class="monitor-tab-content" id="notifyTab-rules">
+                        <div class="result-card">
+                            <h4>通知规则</h4>
+                            <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px;">选择需要接收通知的事件类型</p>
+                            <div style="display:flex;flex-direction:column;gap:12px;">
+                                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                    <input type="checkbox" id="nfRuleSignal" onchange="saveNotifyConfig('rules', 'signal_change', this.checked)">
+                                    <span>策略信号变化通知 - 当策略产生买入/卖出信号时推送</span>
+                                </label>
+                                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                    <input type="checkbox" id="nfRuleSummary" onchange="saveNotifyConfig('rules', 'daily_summary', this.checked)">
+                                    <span>每日摘要通知 - 每日定时发送账户概况和持仓摘要</span>
+                                </label>
+                                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                    <input type="checkbox" id="nfRuleRisk" onchange="saveNotifyConfig('rules', 'risk_alert', this.checked)">
+                                    <span>风险告警通知 - 触发风控阈值时推送告警</span>
+                                </label>
+                                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                    <input type="checkbox" id="nfRuleTrade" onchange="saveNotifyConfig('rules', 'trade_notify', this.checked)">
+                                    <span>交易执行通知 - 每次成交后推送交易详情</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 多周期分析页面 -->
+            <!-- 多资产类别页面 -->
+            <!-- 机器学习因子挖掘页面 -->
+            <!-- 策略组合管理页面 -->
+            <!-- 绩效归因分析页面 -->
+            <section class="page" id="page-attribution">
+                <div class="page-header">
+                    <h1>绩效归因分析</h1>
+                    <p class="page-desc">Brinson归因、因子归因、交易归因与时间序列分析</p>
+                </div>
+                <div class="monitor-tabs" style="margin-bottom:20px;">
+                    <button class="monitor-tab active" onclick="switchAttrTab('brinson')">Brinson归因</button>
+                    <button class="monitor-tab" onclick="switchAttrTab('factor')">因子归因</button>
+                    <button class="monitor-tab" onclick="switchAttrTab('timeseries')">时间序列</button>
+                    <button class="monitor-tab" onclick="switchAttrTab('trade')">交易归因</button>
+                </div>
+
+                <!-- Brinson归因 -->
+                <div class="monitor-tab-content active" id="attrTab-brinson">
+                    <div class="result-card">
+                        <h4>Brinson归因分析</h4>
+                        <p style="font-size:13px;color:var(--text-muted);margin:8px 0;">将超额收益分解为配置效应、选择效应和交互效应</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px;">
+                            <div>
+                                <h5 style="margin-bottom:8px;">组合配置</h5>
+                                <div id="brinsonPortfolio">
+                                    <div class="brinson-row" style="display:flex;gap:8px;align-items:flex-end;margin-bottom:6px;">
+                                        <div class="form-group" style="margin-bottom:0;">
+                                            <label>行业</label>
+                                            <input type="text" class="br-sector" placeholder="如 消费" style="width:100px;">
+                                        </div>
+                                        <div class="form-group" style="margin-bottom:0;">
+                                            <label>权重%</label>
+                                            <input type="number" class="br-pw" placeholder="30" style="width:70px;">
+                                        </div>
+                                        <div class="form-group" style="margin-bottom:0;">
+                                            <label>收益%</label>
+                                            <input type="number" class="br-pr" placeholder="5" step="0.1" style="width:70px;">
+                                        </div>
+                                        <button class="btn-secondary btn-sm" onclick="this.parentElement.remove()" style="margin-bottom:0;">删除</button>
+                                    </div>
+                                </div>
+                                <button class="btn-secondary btn-sm" onclick="addBrinsonRow('brinsonPortfolio')">+ 添加行业</button>
+                            </div>
+                            <div>
+                                <h5 style="margin-bottom:8px;">基准配置</h5>
+                                <div id="brinsonBenchmark">
+                                    <div class="brinson-row" style="display:flex;gap:8px;align-items:flex-end;margin-bottom:6px;">
+                                        <div class="form-group" style="margin-bottom:0;">
+                                            <label>行业</label>
+                                            <input type="text" class="br-sector" placeholder="如 消费" style="width:100px;">
+                                        </div>
+                                        <div class="form-group" style="margin-bottom:0;">
+                                            <label>权重%</label>
+                                            <input type="number" class="br-bw" placeholder="25" style="width:70px;">
+                                        </div>
+                                        <div class="form-group" style="margin-bottom:0;">
+                                            <label>收益%</label>
+                                            <input type="number" class="br-br" placeholder="4" step="0.1" style="width:70px;">
+                                        </div>
+                                        <button class="btn-secondary btn-sm" onclick="this.parentElement.remove()" style="margin-bottom:0;">删除</button>
+                                    </div>
+                                </div>
+                                <button class="btn-secondary btn-sm" onclick="addBrinsonRow('brinsonBenchmark')">+ 添加行业</button>
+                            </div>
+                        </div>
+                        <button class="btn-primary" onclick="runBrinson()" style="margin-top:12px;">执行Brinson归因</button>
+                    </div>
+                    <div id="brinsonResult"></div>
+                </div>
+
+                <!-- 因子归因 -->
+                <div class="monitor-tab-content" id="attrTab-factor">
+                    <div class="result-card">
+                        <h4>因子归因分析</h4>
+                        <p style="font-size:13px;color:var(--text-muted);margin:8px 0;">将组合收益分解为各因子的贡献</p>
+                        <div class="form-group" style="margin-top:12px;">
+                            <label>组合日收益率（逗号分隔）</label>
+                            <input type="text" id="faReturns" placeholder="0.01,-0.005,0.02,0.008,-0.003,..." style="width:100%;">
+                        </div>
+                        <div id="factorExposures" style="margin-top:12px;">
+                            <h5 style="margin-bottom:8px;">因子暴露</h5>
+                            <div class="fa-row" style="display:flex;gap:8px;align-items:flex-end;margin-bottom:6px;">
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label>因子名称</label>
+                                    <input type="text" class="fa-fname" placeholder="如 市场因子" style="width:120px;">
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label>暴露值</label>
+                                    <input type="number" class="fa-exp" placeholder="1.0" step="0.1" style="width:80px;">
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;flex:1;">
+                                    <label>因子日收益率</label>
+                                    <input type="text" class="fa-freturns" placeholder="0.008,0.005,-0.002,..." style="width:100%;">
+                                </div>
+                                <button class="btn-secondary btn-sm" onclick="this.parentElement.remove()" style="margin-bottom:0;">删除</button>
+                            </div>
+                        </div>
+                        <button class="btn-secondary btn-sm" onclick="addFactorRow()">+ 添加因子</button>
+                        <button class="btn-primary" onclick="runFactorAttr()" style="margin-left:8px;">执行因子归因</button>
+                    </div>
+                    <div id="factorAttrResult"></div>
+                </div>
+
+                <!-- 时间序列归因 -->
+                <div class="monitor-tab-content" id="attrTab-timeseries">
+                    <div class="result-card">
+                        <h4>时间序列归因</h4>
+                        <p style="font-size:13px;color:var(--text-muted);margin:8px 0;">分析不同时间段的收益来源和表现变化</p>
+                        <div class="form-group" style="margin-top:12px;">
+                            <label>权益曲线（逗号分隔）</label>
+                            <input type="text" id="tsEquity" placeholder="1000000,1005000,1002000,1010000,..." style="width:100%;">
+                        </div>
+                        <button class="btn-primary" onclick="runTimeSeriesAttr()" style="margin-top:12px;">执行时间序列归因</button>
+                    </div>
+                    <div id="tsAttrResult"></div>
+                </div>
+
+                <!-- 交易归因 -->
+                <div class="monitor-tab-content" id="attrTab-trade">
+                    <div class="result-card">
+                        <h4>交易归因分析</h4>
+                        <p style="font-size:13px;color:var(--text-muted);margin:8px 0;">分析每笔交易的盈亏来源和交易行为特征</p>
+                        <div id="tradeRecords" style="margin-top:12px;">
+                            <div class="trade-row" style="display:flex;gap:8px;align-items:flex-end;margin-bottom:6px;">
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label>类型</label>
+                                    <select class="tr-type" style="width:80px;"><option value="买入">买入</option><option value="卖出">卖出</option></select>
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label>盈亏</label>
+                                    <input type="number" class="tr-pnl" placeholder="1000" style="width:80px;">
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label>盈亏比例%</label>
+                                    <input type="number" class="tr-pnlpct" placeholder="2.5" step="0.1" style="width:80px;">
+                                </div>
+                                <button class="btn-secondary btn-sm" onclick="this.parentElement.remove()" style="margin-bottom:0;">删除</button>
+                            </div>
+                        </div>
+                        <button class="btn-secondary btn-sm" onclick="addTradeRow()">+ 添加交易</button>
+                        <button class="btn-primary" onclick="runTradeAttr()" style="margin-left:8px;">执行交易归因</button>
+                    </div>
+                    <div id="tradeAttrResult"></div>
+                </div>
+            </section>
+
+            <!-- 算法交易执行页面 -->
+            <!-- 市场情绪/舆情分析页面 -->
+            <section class="page" id="page-sentiment">
+                <div class="page-header">
+                    <h1>市场情绪/舆情分析</h1>
+                    <p class="page-desc">个股情绪、市场宽度、新闻情感、恐惧贪婪指数</p>
+                </div>
+                <div class="monitor-tabs" style="margin-bottom:20px;">
+                    <button class="monitor-tab active" onclick="switchSentTab('stock')">个股情绪</button>
+                    <button class="monitor-tab" onclick="switchSentTab('breadth')">市场宽度</button>
+                    <button class="monitor-tab" onclick="switchSentTab('news')">新闻情感</button>
+                    <button class="monitor-tab" onclick="switchSentTab('fear-greed')">恐惧贪婪</button>
+                </div>
+
+                <!-- 个股情绪 -->
+                <div class="monitor-tab-content active" id="sentTab-stock">
+                    <div class="result-card">
+                        <h4>个股情绪分析</h4>
+                        <p style="font-size:13px;color:var(--text-muted);margin:8px 0;">基于价格动量、成交量、波动率等构建综合情绪指数</p>
+                        <div class="form-row" style="margin-top:12px;">
+                            <div class="form-group">
+                                <label>股票代码</label>
+                                <input type="text" id="sentSymbol" placeholder="如 600519" style="width:140px;">
+                            </div>
+                            <div class="form-group">
+                                <label>分析天数</label>
+                                <input type="number" id="sentDays" value="60" style="width:100px;">
+                            </div>
+                        </div>
+                        <button class="btn-primary" onclick="runStockSentiment()" style="margin-top:8px;">分析个股情绪</button>
+                    </div>
+                    <div id="stockSentResult"></div>
+                </div>
+
+                <!-- 市场宽度 -->
+                <div class="monitor-tab-content" id="sentTab-breadth">
+                    <div class="result-card">
+                        <h4>市场宽度分析</h4>
+                        <p style="font-size:13px;color:var(--text-muted);margin:8px 0;">分析多只股票的涨跌分布，判断市场整体强弱</p>
+                        <div class="form-group" style="margin-top:12px;">
+                            <label>股票代码列表（逗号分隔）</label>
+                            <input type="text" id="breadthSymbols" placeholder="600519,000858,601318,600036,..." style="width:100%;">
+                        </div>
+                        <div class="form-group" style="margin-top:8px;">
+                            <label>分析周期（天）</label>
+                            <input type="number" id="breadthDays" value="5" style="width:100px;">
+                        </div>
+                        <button class="btn-primary" onclick="runBreadth()" style="margin-top:8px;">分析市场宽度</button>
+                    </div>
+                    <div id="breadthResult"></div>
+                </div>
+
+                <!-- 新闻情感 -->
+                <div class="monitor-tab-content" id="sentTab-news">
+                    <div class="result-card">
+                        <h4>新闻情感分析</h4>
+                        <p style="font-size:13px;color:var(--text-muted);margin:8px 0;">基于中文情感词典分析新闻标题的情感倾向</p>
+                        <div id="newsItems" style="margin-top:12px;">
+                            <div class="news-row" style="display:flex;gap:8px;align-items:flex-end;margin-bottom:6px;">
+                                <div class="form-group" style="margin-bottom:0;flex:1;">
+                                    <label>新闻标题</label>
+                                    <input type="text" class="ni-title" placeholder="如 茅台突破2000元创新高" style="width:100%;">
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;flex:1;">
+                                    <label>内容摘要</label>
+                                    <input type="text" class="ni-content" placeholder="如 贵州茅台股价突破2000元..." style="width:100%;">
+                                </div>
+                                <button class="btn-secondary btn-sm" onclick="this.parentElement.remove()" style="margin-bottom:0;">删除</button>
+                            </div>
+                        </div>
+                        <button class="btn-secondary btn-sm" onclick="addNewsItem()">+ 添加新闻</button>
+                        <button class="btn-primary" onclick="runNewsSentiment()" style="margin-left:8px;">分析新闻情感</button>
+                    </div>
+                    <div id="newsSentResult"></div>
+                </div>
+
+                <!-- 恐惧贪婪 -->
+                <div class="monitor-tab-content" id="sentTab-fear-greed">
+                    <div class="result-card">
+                        <h4>恐惧贪婪指数</h4>
+                        <p style="font-size:13px;color:var(--text-muted);margin:8px 0;">综合价格动量、波动率、涨跌比等维度计算市场情绪</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+                            <div class="form-group">
+                                <label>大盘涨跌幅(%)</label>
+                                <input type="number" id="fgChange" value="1.5" step="0.1" style="width:100%;">
+                            </div>
+                            <div class="form-group">
+                                <label>看跌/看涨比率</label>
+                                <input type="number" id="fgPcr" value="0.8" step="0.1" style="width:100%;">
+                            </div>
+                            <div class="form-group">
+                                <label>波动率</label>
+                                <input type="number" id="fgVol" value="0.2" step="0.01" style="width:100%;">
+                            </div>
+                            <div class="form-group">
+                                <label>量比</label>
+                                <input type="number" id="fgVolRatio" value="1.2" step="0.1" style="width:100%;">
+                            </div>
+                            <div class="form-group">
+                                <label>涨跌比</label>
+                                <input type="number" id="fgAd" value="1.5" step="0.1" style="width:100%;">
+                            </div>
+                            <div class="form-group">
+                                <label>新高/新低比</label>
+                                <input type="number" id="fgNhl" value="2.0" step="0.1" style="width:100%;">
+                            </div>
+                        </div>
+                        <button class="btn-primary" onclick="runFearGreed()" style="margin-top:12px;">计算恐惧贪婪指数</button>
+                    </div>
+                    <div id="fgResult"></div>
+                </div>
+            </section>
+
+            <!-- 实时风控监控页面 -->
+            <section class="page" id="page-risk-monitor">
+                <div class="page-header">
+                    <h1>实时风控监控面板</h1>
+                    <p class="page-desc">盘中动态风控预警、VaR计算、回撤分析、压力测试</p>
+                </div>
+                <div class="monitor-tabs" style="margin-bottom:20px;">
+                    <button class="monitor-tab active" onclick="switchRiskTab('check')">风险检查</button>
+                    <button class="monitor-tab" onclick="switchRiskTab('var')">VaR计算</button>
+                    <button class="monitor-tab" onclick="switchRiskTab('drawdown')">回撤分析</button>
+                    <button class="monitor-tab" onclick="switchRiskTab('limits')">限额检查</button>
+                    <button class="monitor-tab" onclick="switchRiskTab('stress')">压力测试</button>
+                </div>
+
+                <!-- 风险检查 -->
+                <div class="monitor-tab-content active" id="riskTab-check">
+                    <div class="result-card">
+                        <h4>持仓风险检查</h4>
+                        <p style="font-size:13px;color:var(--text-muted);margin:8px 0;">输入持仓数据，实时检查风险指标</p>
+                        <div id="riskPositions" style="margin-top:12px;">
+                            <div class="risk-pos-row" style="display:flex;gap:8px;align-items:flex-end;margin-bottom:6px;flex-wrap:wrap;">
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label>股票代码</label><input type="text" class="rp-symbol" placeholder="600519" style="width:100px;">
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label>持仓数量</label><input type="number" class="rp-qty" value="1000" style="width:100px;">
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label>成本价</label><input type="number" class="rp-cost" value="1800" step="0.01" style="width:100px;">
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label>当前价</label><input type="number" class="rp-price" value="1850" step="0.01" style="width:100px;">
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label>行业</label><input type="text" class="rp-sector" placeholder="白酒" style="width:80px;">
+                                </div>
+                                <button class="btn-secondary btn-sm" onclick="this.parentElement.remove()" style="margin-bottom:0;">删除</button>
+                            </div>
+                        </div>
+                        <button class="btn-secondary btn-sm" onclick="addRiskPosition()">+ 添加持仓</button>
+                        <div class="form-row" style="margin-top:12px;">
+                            <div class="form-group">
+                                <label>大盘涨跌幅(%)</label>
+                                <input type="number" id="riskIndexChange" value="0" step="0.1" style="width:120px;">
+                            </div>
+                        </div>
+                        <button class="btn-primary" onclick="runRiskCheck()" style="margin-top:8px;">执行风险检查</button>
+                    </div>
+                    <div id="riskCheckResult"></div>
+                </div>
+
+                <!-- VaR计算 -->
+                <div class="monitor-tab-content" id="riskTab-var">
+                    <div class="result-card">
+                        <h4>VaR (Value at Risk) 计算</h4>
+                        <p style="font-size:13px;color:var(--text-muted);margin:8px 0;">计算在给定置信水平下的最大可能损失</p>
+                        <div class="form-group" style="margin-top:12px;">
+                            <label>日收益率序列（逗号分隔）</label>
+                            <input type="text" id="varReturns" placeholder="0.01,-0.02,0.015,-0.005,0.02,..." style="width:100%;">
+                        </div>
+                        <div class="form-row" style="margin-top:8px;">
+                            <div class="form-group">
+                                <label>置信水平</label>
+                                <select id="varConfidence" style="width:120px;">
+                                    <option value="0.95">95%</option>
+                                    <option value="0.99">99%</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>计算方法</label>
+                                <select id="varMethod" style="width:140px;">
+                                    <option value="historical">历史模拟法</option>
+                                    <option value="parametric">参数法</option>
+                                    <option value="monte_carlo">蒙特卡洛</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn-primary" onclick="runVaR()" style="margin-top:8px;">计算VaR</button>
+                    </div>
+                    <div id="varResult"></div>
+                </div>
+
+                <!-- 回撤分析 -->
+                <div class="monitor-tab-content" id="riskTab-drawdown">
+                    <div class="result-card">
+                        <h4>回撤分析</h4>
+                        <p style="font-size:13px;color:var(--text-muted);margin:8px 0;">分析权益曲线的回撤情况</p>
+                        <div class="form-group" style="margin-top:12px;">
+                            <label>权益曲线（逗号分隔）</label>
+                            <input type="text" id="ddEquity" placeholder="100000,102000,101000,105000,103000,..." style="width:100%;">
+                        </div>
+                        <button class="btn-primary" onclick="runDrawdown()" style="margin-top:8px;">分析回撤</button>
+                    </div>
+                    <div id="ddResult"></div>
+                </div>
+
+                <!-- 限额检查 -->
+                <div class="monitor-tab-content" id="riskTab-limits">
+                    <div class="result-card">
+                        <h4>风控限额检查</h4>
+                        <p style="font-size:13px;color:var(--text-muted);margin:8px 0;">检查持仓是否超过风控限额</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+                            <div class="form-group">
+                                <label>单只股票最大仓位(%)</label>
+                                <input type="number" id="limSingle" value="30" style="width:100%;">
+                            </div>
+                            <div class="form-group">
+                                <label>单行业最大暴露(%)</label>
+                                <input type="number" id="limSector" value="40" style="width:100%;">
+                            </div>
+                            <div class="form-group">
+                                <label>最大总杠杆</label>
+                                <input type="number" id="limLeverage" value="1.0" step="0.1" style="width:100%;">
+                            </div>
+                            <div class="form-group">
+                                <label>净资产</label>
+                                <input type="number" id="limNav" value="1000000" style="width:100%;">
+                            </div>
+                        </div>
+                        <button class="btn-primary" onclick="runLimits()" style="margin-top:12px;">执行限额检查</button>
+                    </div>
+                    <div id="limitsResult"></div>
+                </div>
+
+                <!-- 压力测试 -->
+                <div class="monitor-tab-content" id="riskTab-stress">
+                    <div class="result-card">
+                        <h4>压力测试</h4>
+                        <p style="font-size:13px;color:var(--text-muted);margin:8px 0;">模拟极端市场情况下的组合表现</p>
+                        <div id="stressScenarios" style="margin-top:12px;">
+                            <div class="stress-row" style="display:flex;gap:8px;align-items:flex-end;margin-bottom:6px;flex-wrap:wrap;">
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label>场景名称</label><input type="text" class="ss-name" value="大盘跌5%" style="width:120px;">
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label>大盘跌幅(%)</label><input type="number" class="ss-index" value="-5" style="width:100px;">
+                                </div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label>行业冲击(JSON)</label><input type="text" class="ss-sector" placeholder='{"白酒":-8,"银行":-3}' style="width:200px;">
+                                </div>
+                                <button class="btn-secondary btn-sm" onclick="this.parentElement.remove()" style="margin-bottom:0;">删除</button>
+                            </div>
+                        </div>
+                        <button class="btn-secondary btn-sm" onclick="addStressScenario()">+ 添加场景</button>
+                        <button class="btn-primary" onclick="runStress()" style="margin-left:8px;">执行压力测试</button>
+                    </div>
+                    <div id="stressResult"></div>
+                </div>
+            </section>
+
+            <!-- 策略研究IDE页面 -->
+            <!-- 蒙特卡洛模拟页面 -->
+            <section class="page" id="page-monte-carlo">
+                <div class="page-header">
+                    <h1>蒙特卡洛模拟</h1>
+                    <p class="page-desc">基于历史分布模拟未来收益路径，评估策略稳健性与尾部风险</p>
+                </div>
+                <div class="monte-carlo-tabs">
+                    <button class="monitor-tab active" onclick="switchMcTab('simulate')">收益模拟</button>
+                    <button class="monitor-tab" onclick="switchMcTab('overfitting')">过拟合检测</button>
+                </div>
+                <div class="monitor-tab-content active" id="mcTab-simulate">
+                    <div class="form-row" style="margin-bottom:16px;">
+                        <div class="form-group">
+                            <label>股票代码</label>
+                            <input type="text" id="mcSymbol" placeholder="如 600519" maxlength="6" value="600519">
+                        </div>
+                        <div class="form-group">
+                            <label>模拟次数</label>
+                            <input type="number" id="mcSimulations" value="1000" min="100" max="10000" step="100">
+                        </div>
+                        <div class="form-group">
+                            <label>预测周期（天）</label>
+                            <input type="number" id="mcHorizon" value="252" min="60" max="1260" step="60">
+                        </div>
+                        <div class="form-group">
+                            <label>初始资金</label>
+                            <input type="number" id="mcCapital" value="100000" min="10000" step="10000">
+                        </div>
+                        <div class="form-group" style="align-self:flex-end;">
+                            <button class="btn-primary" onclick="runMonteCarlo()">开始模拟</button>
+                        </div>
+                    </div>
+                    <div id="mcProgress" class="po-progress" style="display:none;">
+                        <div class="spinner"></div>
+                        <span>蒙特卡洛模拟计算中...</span>
+                    </div>
+                    <div id="mcResult">
+                        <div class="empty-state"><p>输入参数，点击"开始模拟"查看未来收益分布</p></div>
+                    </div>
+                </div>
+                <div class="monitor-tab-content" id="mcTab-overfitting">
+                    <div class="form-row" style="margin-bottom:16px;">
+                        <div class="form-group" style="flex:2;">
+                            <label>回测绩效指标（JSON格式）</label>
+                            <textarea id="mcMetrics" rows="4" placeholder='{"年化收益率": 15.5, "夏普比率": 1.2, "最大回撤": -18.3, "胜率": 55.2, "交易次数": 120, "Calmar比率": 0.85}' style="width:100%;font-family:monospace;font-size:12px;"></textarea>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:16px;">
+                        <button class="btn-primary" onclick="runOverfittingCheck()">检测过拟合</button>
+                    </div>
+                    <div id="mcOverfittingResult">
+                        <div class="empty-state"><p>输入回测绩效指标，点击"检测过拟合"评估策略稳健性</p></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 批量回测页面 -->
+            <!-- 实时监控页面 -->
+            <section class="page" id="page-monitor">
+                <div class="page-header">
+                    <h1>实时监控</h1>
+                    <p class="page-desc">盈亏实时计算、异常波动告警、风险预警</p>
+                </div>
+                <div class="monitor-tabs">
+                    <button class="monitor-tab active" onclick="switchMonitorTab('anomaly')">异常检测</button>
+                    <button class="monitor-tab" onclick="switchMonitorTab('pnl')">盈亏计算</button>
+                    <button class="monitor-tab" onclick="switchMonitorTab('market')">市场概览</button>
+                </div>
+                <div class="monitor-tab-content active" id="monitorTab-anomaly">
+                    <div class="form-row" style="margin-bottom:16px;">
+                        <div class="form-group">
+                            <label>股票代码</label>
+                            <input type="text" id="monSymbol" placeholder="如 600519" maxlength="6" value="600519">
+                        </div>
+                        <div class="form-group" style="align-self:flex-end;">
+                            <button class="btn-primary" onclick="runAnomalyCheck()">检测异常</button>
+                        </div>
+                    </div>
+                    <div id="anomalyResult">
+                        <div class="empty-state"><p>输入股票代码，点击"检测异常"查看告警信息</p></div>
+                    </div>
+                </div>
+                <div class="monitor-tab-content" id="monitorTab-pnl">
+                    <div style="margin-bottom:16px;">
+                        <button class="btn-primary" onclick="runPnlCalc()">计算持仓盈亏</button>
+                    </div>
+                    <div id="pnlResult">
+                        <div class="empty-state"><p>点击"计算持仓盈亏"查看当前持仓的实时盈亏</p></div>
+                    </div>
+                </div>
+                <div class="monitor-tab-content" id="monitorTab-market">
+                    <div style="margin-bottom:16px;">
+                        <button class="btn-primary" onclick="runMarketOverview()">刷新市场概览</button>
+                    </div>
+                    <div id="marketOverviewResult">
+                        <div class="empty-state"><p>点击"刷新市场概览"查看实时市场数据</p></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI 助手页面 -->
+            <section class="page" id="page-ai">
+                <div class="page-header">
+                    <h1>AI 智能助手</h1>
+                    <p class="page-desc">自然语言生成策略、回测解读、异常诊断</p>
+                </div>
+                <div class="ai-container">
+                    <div class="ai-sidebar">
+                        <div class="ai-mode-list">
+                            <button class="ai-mode-btn active" data-mode="chat" onclick="switchAiMode('chat')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                <span>自由对话</span>
+                            </button>
+                            <button class="ai-mode-btn" data-mode="strategy" onclick="switchAiMode('strategy')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                                <span>策略生成</span>
+                            </button>
+                            <button class="ai-mode-btn" data-mode="interpret" onclick="switchAiMode('interpret')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                                <span>回测解读</span>
+                            </button>
+                            <button class="ai-mode-btn" data-mode="diagnose" onclick="switchAiMode('diagnose')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                <span>异常诊断</span>
+                            </button>
+                            <button class="ai-mode-btn" data-mode="recommend" onclick="switchAiMode('recommend')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                <span>智能推荐</span>
+                            </button>
+                            <button class="ai-mode-btn" data-mode="recommend_assist" onclick="switchAiMode('recommend_assist')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                                <span>智能推荐助手</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="ai-chat-area">
+                        <div class="ai-chat-messages" id="aiChatMessages">
+                            <div class="ai-welcome">
+                                <div class="ai-welcome-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                </div>
+                                <h3>你好，我是你的 AI 股票分析助手</h3>
+                                <p>我可以帮你做以下事情：</p>
+                                <div class="ai-suggestions">
+                                    <button class="ai-suggestion-chip" onclick="sendAiSuggestion('帮我写一个5日均线上穿20日均线且放量1.5倍的策略')">生成均线策略</button>
+                                    <button class="ai-suggestion-chip" onclick="sendAiSuggestion('帮我写一个MACD金叉买入、RSI低于30的策略')">生成MACD+RSI策略</button>
+                                    <button class="ai-suggestion-chip" onclick="sendAiSuggestion('帮我分析回测结果')">解读回测结果</button>
+                                    <button class="ai-suggestion-chip" onclick="sendAiSuggestion('我的策略回撤很大，帮我诊断原因')">诊断异常回撤</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ai-recommend-panel" id="aiRecommendPanel" style="display:none;">
+                            <div class="ai-recommend-form">
+                                <h3>AI 智能推荐股票</h3>
+                                <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;">结合多因子模型和AI分析，为您智能推荐最具投资价值的股票</p>
+                                <div class="form-row">
+                                    <div class="form-group" style="width:120px;">
+                                        <label>市场范围</label>
+                                        <select id="aiRecommendMarket">
+                                            <option value="">全部市场</option>
+                                            <option value="sh">上证指数</option>
+                                            <option value="sz">深证成指</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="flex:1;">
+                                        <label>偏好板块</label>
+                                        <select id="aiRecommendPreference">
+                                            <option value="">不限板块</option>
+                                            <option value="科技">科技</option>
+                                            <option value="消费">消费</option>
+                                            <option value="医药">医药</option>
+                                            <option value="金融">金融</option>
+                                            <option value="新能源">新能源</option>
+                                            <option value="白酒">白酒</option>
+                                            <option value="半导体">半导体</option>
+                                            <option value="军工">军工</option>
+                                            <option value="汽车">汽车</option>
+                                            <option value="家电">家电</option>
+                                            <option value="电力">电力</option>
+                                            <option value="地产">地产</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="width:140px;">
+                                        <label>股价范围</label>
+                                        <select id="aiRecommendPriceRange">
+                                            <option value="">不限</option>
+                                            <option value="0-2">0-2元</option>
+                                            <option value="3-5">3-5元</option>
+                                            <option value="6-10">6-10元</option>
+                                            <option value="11-20">11-20元</option>
+                                            <option value="21-50">21-50元</option>
+                                            <option value="51-100">51-100元</option>
+                                            <option value="100+">100元以上</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="width:130px;">
+                                        <label>风险偏好</label>
+                                        <select id="aiRecommendRisk">
+                                            <option value="低">低风险</option>
+                                            <option value="中等" selected>中等风险</option>
+                                            <option value="高">高风险</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="width:100px;">
+                                        <label>推荐数量</label>
+                                        <select id="aiRecommendTopN">
+                                            <option value="3">3只</option>
+                                            <option value="5" selected>5只</option>
+                                            <option value="10">10只</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button class="btn-primary" onclick="runAiRecommend()" style="width:100%;margin-top:8px;">开始智能推荐</button>
+                            </div>
+                            <div id="aiRecommendResult" style="margin-top:16px;"></div>
+                        </div>
+                        <!-- 智能推荐助手：对话式推荐 -->
+                        <div class="ai-recommend-assist-panel" id="aiRecommendAssistPanel" style="display:none;">
+                            <div class="ai-recommend-assist-header">
+                                <h3>智能推荐助手</h3>
+                                <p style="color:var(--text-muted);font-size:13px;">用自然语言描述你的需求，我会智能解析并为你推荐股票。支持多轮对话补充维度。</p>
+                            </div>
+                            <div class="ai-recommend-assist-messages" id="aiRecommendAssistMessages">
+                                <div class="ai-welcome">
+                                    <div class="ai-welcome-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                                    </div>
+                                    <h3>你好，我是智能推荐助手</h3>
+                                    <p>你可以这样问我：</p>
+                                    <div class="ai-suggestions">
+                                        <button class="ai-suggestion-chip" onclick="sendRecommendAssistSuggestion('帮我推荐10只0-2元之间最值得购买的上证指数股票，并告诉我推荐理由，要从多维度全方位推荐')">推荐0-2元上证股票</button>
+                                        <button class="ai-suggestion-chip" onclick="sendRecommendAssistSuggestion('帮我推荐5只深证的高科技股，市盈率低于20，换手率活跃的')">推荐深证科技股</button>
+                                        <button class="ai-suggestion-chip" onclick="sendRecommendAssistSuggestion('推荐3只低风险的价值投资标的，价格在10-20元之间')">推荐低风险价值股</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="ai-recommend-assist-input">
+                                <textarea id="aiRecommendAssistInput" placeholder="描述你的推荐需求，如：帮我推荐10只0-2元之间的上证股票，从多维度分析..." rows="2" onkeydown="handleRecommendAssistInputKey(event)"></textarea>
+                                <button class="btn-primary" onclick="sendRecommendAssistMessage()" id="aiRecommendAssistSendBtn">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="ai-chat-input" id="aiChatInput">
+                            <textarea id="aiInput" placeholder="输入你的问题，如：帮我写一个5日均线上穿20日均线且放量的策略..." rows="2" onkeydown="handleAiInputKey(event)"></textarea>
+                            <button class="btn-primary" onclick="sendAiMessage()" id="aiSendBtn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="page" id="page-scheduler">
+                <div class="page-header">
+                    <h1>定时任务调度</h1>
+                    <p class="page-desc">创建和管理定时执行的量化分析任务，支持每日/每周自动运行</p>
+                </div>
+                <div class="scheduler-toolbar">
+                    <button class="btn-primary" onclick="showAddTaskModal()">+ 新建任务</button>
+                    <button class="btn-secondary" onclick="loadSchedulerTasks()" style="margin-left:8px;">刷新列表</button>
+                    <span style="margin-left:16px;font-size:13px;color:var(--text-muted);">
+                        调度器状态：<span id="schedulerStatus" style="font-weight:600;">未启动</span>
+                    </span>
+                    <button class="btn-secondary btn-sm" onclick="toggleScheduler()" id="schedulerToggleBtn" style="margin-left:8px;">启动调度器</button>
+                </div>
+                <div id="schedulerTaskList" class="scheduler-task-list">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="color:var(--text-muted);margin-bottom:16px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <p>暂无定时任务，点击"新建任务"创建</p>
+                    </div>
+                </div>
+                <div id="schedulerLogs" class="scheduler-logs" style="margin-top:24px;">
+                    <h3 style="margin-bottom:12px;">执行日志</h3>
+                    <div class="empty-state">
+                        <p>选择任务查看执行日志</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 新建任务弹窗 -->
+            <div class="modal-overlay" id="addTaskModal" style="display:none;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>新建定时任务</h3>
+                        <button class="modal-close" onclick="closeAddTaskModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>任务名称</label>
+                            <input type="text" id="taskName" placeholder="如：每日市场概览">
+                        </div>
+                        <div class="form-group">
+                            <label>任务类型</label>
+                            <select id="taskType">
+                                <option value="market_overview">市场概览</option>
+                                <option value="stock_ranking">股票排名</option>
+                                <option value="risk_check">风险检查</option>
+                                <option value="factor_analysis">因子分析</option>
+                                <option value="industry_rotation">行业轮动</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>调度类型</label>
+                            <select id="taskSchedule">
+                                <option value="daily">每日</option>
+                                <option value="weekly">每周一</option>
+                                <option value="monthly">每月1号</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>执行时间</label>
+                            <input type="time" id="taskTime" value="09:00">
+                        </div>
+                        <div class="form-group">
+                            <label>股票代码（可选，逗号分隔）</label>
+                            <input type="text" id="taskSymbols" placeholder="如：600519,000858">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-secondary" onclick="closeAddTaskModal()">取消</button>
+                        <button class="btn-primary" onclick="addSchedulerTask()">创建</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 系统设置页面 -->
+            <section class="page" id="page-settings">
+                <div class="page-header">
+                    <h1>系统设置</h1>
+                    <p class="page-desc">配置大模型 API</p>
+                </div>
+
+                <!-- 大模型配置 -->
+                <div class="settings-section">
+                    <div class="settings-section-header">
+                        <h3>大模型配置 (LLM)</h3>
+                        <span class="settings-section-desc">支持 OpenAI 兼容接口，配置后 AI 助手、策略生成等功能将使用此配置</span>
+                    </div>
+                    <div class="settings-form">
+                        <div class="form-row">
+                            <div class="form-group" style="flex:2;">
+                                <label>API 地址 (Base URL)</label>
+                                <input type="text" id="settingsAiBase" placeholder="https://api.openai.com/v1">
+                            </div>
+                            <div class="form-group" style="flex:1;">
+                                <label>模型名称</label>
+                                <input type="text" id="settingsAiModel" placeholder="gpt-4o">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>API Key</label>
+                            <input type="password" id="settingsAiKey" placeholder="sk-...">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>最大 Token</label>
+                                <input type="number" id="settingsAiMaxTokens" placeholder="2000" min="100" max="32000">
+                            </div>
+                            <div class="form-group">
+                                <label>温度 (0-2)</label>
+                                <input type="number" id="settingsAiTemperature" placeholder="0.3" min="0" max="2" step="0.1">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="settingsAiEnabled"> 启用大模型功能
+                            </label>
+                        </div>
+                        <div class="settings-form-actions">
+                            <button class="btn-secondary" onclick="testAiFromSettings()">测试连接</button>
+                            <button class="btn-primary" onclick="saveAiFromSettings()">保存大模型配置</button>
+                        </div>
+                        <div id="aiConfigMsg" class="settings-msg" style="display:none;"></div>
+                    </div>
+                </div>
+
+                <!-- 当前配置状态 -->
+                <div class="settings-section">
+                    <div class="settings-section-header">
+                        <h3>配置状态</h3>
+                    </div>
+                    <div class="settings-status-grid" id="settingsStatus">
+                        <div class="loading-text">加载中...</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
