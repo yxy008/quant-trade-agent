@@ -48,9 +48,6 @@ dist/
 Thumbs.db
 desktop.ini
 
-# Skills 子模块（通过 Git Submodule 管理）
-skills/
-
 # 备份目录
 skills_backup/
 
